@@ -1,6 +1,5 @@
 import pytest
-import httpx
-from quipu_sdk import QuipuClient, Base, RagRequest
+from quipu_sdk import QuipuClient, Base
 
 
 class MockModel(Base):
@@ -8,137 +7,89 @@ class MockModel(Base):
     age: int
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def mock_quipu_client():
-    yield QuipuClient[MockModel](_model=MockModel)
+    return QuipuClient[MockModel]()
 
 
+@pytest.mark.parametrize(
+    "name, age",
+    (
+        ("Alice", 20),
+        ("Bob", 30),
+        ("Charlie", 40),
+        ("David", 50),
+        ("Eve", 60),
+    ),
+)
 @pytest.mark.asyncio
-async def test_put_document(mock_quipu_client, mocker):
-    async def mock_response(*args, **kwargs):
-        return httpx.Response(200, json={"key": "123", "name": "John", "age": 30})
+async def test_crud_operations(
+    mock_quipu_client: QuipuClient[MockModel], name: str, age: int
+):
+    instance = MockModel(name=name, age=age)
+    response = await mock_quipu_client.put(namespace="test", instance=instance)
+    assert response.name == name
+    assert response.age == age
+    assert instance.key == response.key
+    response = await mock_quipu_client.get(namespace="test", key=response.key)
+    assert response.name == name  # type: ignore
+    assert response.age == age  # type: ignore
+    instance = MockModel(name=name, age=age + 10)
+    await mock_quipu_client.put(namespace="test", instance=instance)
+    response = await mock_quipu_client.find(namespace="test")
+    assert isinstance(response[0], MockModel)
+    response = await mock_quipu_client.merge(namespace="test", instance=instance)
+    assert response.name == name
+    assert response.age == age + 10
+    response = await mock_quipu_client.delete(namespace="test", key=response.key)
+    assert response.code == 204
+    response = await mock_quipu_client.get(namespace="test", key=response.key)  # type: ignore
+    assert response.code == 404  # type: ignore
 
-    mocker.patch("httpx.AsyncClient.request", side_effect=mock_response)
 
-    instance = MockModel(name="John", age=30)
-    result = await mock_quipu_client.put(
-        namespace="test_namespace", instance=instance, action="put"
+@pytest.mark.parametrize(
+    "content",
+    (
+        "The lazy dog jumped over the quick brown fox",
+        "The quick brown fox jumped over the lazy dog",
+        "The yellow cat jumped over the lazy lion",
+        "The joker is a good movie",
+        "The man in the middle is a heuristic lorem ipsum",
+        "Pizza is the best food",
+        "Python is the best programming language",
+        "Javascript is the worst programming language",
+        "AGI is the future",
+        "ChatGPT is the best AI model",
+        "OpenAI is the best AI company",
+        "Google is the Devil",
+        "This is sparta",
+        "Hello World",
+    ),
+)
+@pytest.mark.asyncio
+async def test_upsert_vector(mock_quipu_client: QuipuClient[MockModel], content: str):
+    response = await mock_quipu_client.upsert(
+        namespace="test", data={"content": content}
     )
-
-    assert result.key == "123"
-    assert result.name == "John"
-    assert result.age == 30
+    assert response.code == 201
 
 
+@pytest.mark.parametrize(
+    "content",
+    (
+        "I and my friends went to the park",
+        "This is Sparta",
+        "Java is the best programming language",
+        "Python is the worst programming language",
+        "AGI is the future",
+        "Do you hear the music?",
+    ),
+)
 @pytest.mark.asyncio
-async def test_get_document(mock_quipu_client, mocker):
-    async def mock_response(*args, **kwargs):
-        return httpx.Response(200, json={"key": "123", "name": "John", "age": 30})
-
-    mocker.patch("httpx.AsyncClient.request", side_effect=mock_response)
-
-    result = await mock_quipu_client.get(
-        namespace="test_namespace", key="123", action="get"
+async def test_query_vector(mock_quipu_client: QuipuClient[MockModel], content: str):
+    response = await mock_quipu_client.query(
+        namespace="test", data={"content": content}, top_k=5
     )
-
-    assert result.key == "123"
-    assert result.name == "John"
-    assert result.age == 30
-
-
-@pytest.mark.asyncio
-async def test_merge_document(mock_quipu_client, mocker):
-    async def mock_response(*args, **kwargs):
-        return httpx.Response(200, json={"key": "123", "name": "John", "age": 31})
-
-    mocker.patch("httpx.AsyncClient.request", side_effect=mock_response)
-
-    instance = MockModel(name="John", age=31)
-    result = await mock_quipu_client.merge(
-        namespace="test_namespace", instance=instance, action="merge"
-    )
-
-    assert result.key == "123"
-    assert result.name == "John"
-    assert result.age == 31
-
-
-@pytest.mark.asyncio
-async def test_delete_document(mock_quipu_client, mocker):
-    async def mock_response(*args, **kwargs):
-        return httpx.Response(200, json={"code": 200, "message": "Deleted"})
-
-    mocker.patch("httpx.AsyncClient.request", side_effect=mock_response)
-
-    result = await mock_quipu_client.delete(
-        namespace="test_namespace", key="123", action="delete"
-    )
-
-    assert result.code == 200
-    assert result.message == "Deleted"
-
-
-@pytest.mark.asyncio
-async def test_find_documents(mock_quipu_client, mocker):
-    async def mock_response(*args, **kwargs):
-        return httpx.Response(200, json=[{"key": "123", "name": "John", "age": 30}])
-
-    mocker.patch("httpx.AsyncClient.request", side_effect=mock_response)
-
-    result = await mock_quipu_client.find(
-        namespace="test_namespace", action="find", name="John"
-    )
-
-    assert len(result) == 1
-    assert result[0].key == "123"
-    assert result[0].name == "John"
-    assert result[0].age == 30
-
-
-@pytest.mark.asyncio
-async def test_query_vector(mock_quipu_client, mocker):
-    async def mock_response(*args, **kwargs):
-        return httpx.Response(
-            200, json=[{"id": "1", "score": 0.9, "content": "example content"}]
-        )
-
-    mocker.patch("httpx.AsyncClient.request", side_effect=mock_response)
-
-    data = RagRequest(content="example query")
-    result = await mock_quipu_client.query(
-        namespace="test_namespace", data=data, top_k=5, action="query"
-    )
-
-    assert len(result) == 1
-    assert result[0].id == "1"
-    assert result[0].score == 0.9
-    assert result[0].content == "example content"
-
-
-@pytest.mark.asyncio
-async def test_upsert_vector(mock_quipu_client, mocker):
-    async def mock_post(*args, **kwargs):
-        return httpx.Response(201, json={"code": 201, "message": "Upserted"})
-
-    mocker.patch("httpx.AsyncClient.request", side_effect=mock_post)
-
-    data = RagRequest(content="example query")
-    result = await mock_quipu_client.upsert(
-        namespace="test_namespace", data=data, action="upsert"
-    )
-
-    assert result.code == 201
-    assert result.message == "Upserted"
-
-
-@pytest.mark.asyncio
-async def test_health_check(mock_quipu_client, mocker):
-    async def mock_response(*args, **kwargs):
-        return httpx.Response(200, json={"code": 200, "message": "Healthy"})
-
-    mocker.patch("httpx.AsyncClient.request", side_effect=mock_response)
-
-    result = await mock_quipu_client.health_check(action="health")
-
-    assert result.code == 200
-    assert result.message == "Healthy"
+    assert len(response) == 5
+    assert response[0].score - 1.0 < 0.01
+    assert response[0].id
