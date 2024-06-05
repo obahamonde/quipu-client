@@ -79,7 +79,7 @@ async def test_find_documents(mock_quipu_client, mocker):
 
     mocker.patch("httpx.AsyncClient.request", side_effect=mock_response)
 
-    result = await mock_quipu_client.find(namespace="test_namespace", name="John", action="find")
+    result = await mock_quipu_client.find(namespace="test_namespace", action="find", name="John")
 
     assert len(result) == 1
     assert result[0].key == "123"
