@@ -10,7 +10,7 @@ class TestModel(Base):
 
 @pytest.fixture
 def mock_quipu_client():
-    return QuipuClient[TestModel](_model=TestModel)
+    yield QuipuClient[TestModel](_model=TestModel)
 
 
 @pytest.mark.asyncio
@@ -21,7 +21,9 @@ async def test_put_document(mock_quipu_client, mocker):
     mocker.patch("httpx.AsyncClient.request", side_effect=mock_response)
 
     instance = TestModel(name="John", age=30)
-    result = await mock_quipu_client.put(namespace="test_namespace", instance=instance, action="put")
+    result = await mock_quipu_client.put(
+        namespace="test_namespace", instance=instance, action="put"
+    )
 
     assert result.key == "123"
     assert result.name == "John"
@@ -35,7 +37,9 @@ async def test_get_document(mock_quipu_client, mocker):
 
     mocker.patch("httpx.AsyncClient.request", side_effect=mock_response)
 
-    result = await mock_quipu_client.get(namespace="test_namespace", key="123", action="get")
+    result = await mock_quipu_client.get(
+        namespace="test_namespace", key="123", action="get"
+    )
 
     assert result.key == "123"
     assert result.name == "John"
@@ -66,7 +70,9 @@ async def test_delete_document(mock_quipu_client, mocker):
 
     mocker.patch("httpx.AsyncClient.request", side_effect=mock_response)
 
-    result = await mock_quipu_client.delete(namespace="test_namespace", key="123", action="delete")
+    result = await mock_quipu_client.delete(
+        namespace="test_namespace", key="123", action="delete"
+    )
 
     assert result.code == 200
     assert result.message == "Deleted"
@@ -79,7 +85,9 @@ async def test_find_documents(mock_quipu_client, mocker):
 
     mocker.patch("httpx.AsyncClient.request", side_effect=mock_response)
 
-    result = await mock_quipu_client.find(namespace="test_namespace", action="find", name="John")
+    result = await mock_quipu_client.find(
+        namespace="test_namespace", action="find", name="John"
+    )
 
     assert len(result) == 1
     assert result[0].key == "123"
@@ -115,7 +123,9 @@ async def test_upsert_vector(mock_quipu_client, mocker):
     mocker.patch("httpx.AsyncClient.request", side_effect=mock_post)
 
     data = RagRequest(content="example query")
-    result = await mock_quipu_client.upsert(namespace="test_namespace", data=data, action="upsert")
+    result = await mock_quipu_client.upsert(
+        namespace="test_namespace", data=data, action="upsert"
+    )
 
     assert result.code == 201
     assert result.message == "Upserted"
