@@ -1,9 +1,9 @@
 import pytest
 import httpx
-from quipu_sdk import QuipuClient, QuipuModel, RagRequest
+from quipu_sdk import QuipuClient, Base, RagRequest
 
 
-class TestModel(QuipuModel):
+class TestModel(Base):
     name: str
     age: int
 
