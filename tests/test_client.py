@@ -3,14 +3,14 @@ import httpx
 from quipu_sdk import QuipuClient, Base, RagRequest
 
 
-class TestModel(Base):
+class MockModel(Base):
     name: str
     age: int
 
 
 @pytest.fixture
 def mock_quipu_client():
-    yield QuipuClient[TestModel](_model=TestModel)
+    yield QuipuClient[MockModel](_model=MockModel)
 
 
 @pytest.mark.asyncio
@@ -20,7 +20,7 @@ async def test_put_document(mock_quipu_client, mocker):
 
     mocker.patch("httpx.AsyncClient.request", side_effect=mock_response)
 
-    instance = TestModel(name="John", age=30)
+    instance = MockModel(name="John", age=30)
     result = await mock_quipu_client.put(
         namespace="test_namespace", instance=instance, action="put"
     )
@@ -53,7 +53,7 @@ async def test_merge_document(mock_quipu_client, mocker):
 
     mocker.patch("httpx.AsyncClient.request", side_effect=mock_response)
 
-    instance = TestModel(name="John", age=31)
+    instance = MockModel(name="John", age=31)
     result = await mock_quipu_client.merge(
         namespace="test_namespace", instance=instance, action="merge"
     )
