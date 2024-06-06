@@ -2,14 +2,14 @@ import pytest
 from quipu_sdk import QuipuClient, Base
 
 
-class MockModel(Base):
+class Meme(Base):
     name: str
     age: int
 
 
 @pytest.fixture(scope="module")
 def mock_quipu_client():
-    return QuipuClient[MockModel]()
+    return QuipuClient[Meme]()
 
 
 @pytest.mark.parametrize(
@@ -24,9 +24,9 @@ def mock_quipu_client():
 )
 @pytest.mark.asyncio
 async def test_crud_operations(
-    mock_quipu_client: QuipuClient[MockModel], name: str, age: int
+    mock_quipu_client: QuipuClient[Meme], name: str, age: int
 ):
-    instance = MockModel(name=name, age=age)
+    instance = Meme(name=name, age=age)
     response = await mock_quipu_client.put(namespace="test", instance=instance)
     assert response.name == name
     assert response.age == age
@@ -34,10 +34,10 @@ async def test_crud_operations(
     response = await mock_quipu_client.get(namespace="test", key=response.key)
     assert response.name == name  # type: ignore
     assert response.age == age  # type: ignore
-    instance = MockModel(name=name, age=age + 10)
+    instance = Meme(name=name, age=age + 10)
     await mock_quipu_client.put(namespace="test", instance=instance)
     response = await mock_quipu_client.find(namespace="test")
-    assert isinstance(response[0], MockModel)
+    assert isinstance(response[0], Meme)
     response = await mock_quipu_client.merge(namespace="test", instance=instance)
     assert response.name == name
     assert response.age == age + 10
@@ -67,7 +67,7 @@ async def test_crud_operations(
     ),
 )
 @pytest.mark.asyncio
-async def test_upsert_vector(mock_quipu_client: QuipuClient[MockModel], content: str):
+async def test_upsert_vector(mock_quipu_client: QuipuClient[Meme], content: str):
     response = await mock_quipu_client.upsert(
         namespace="test", data={"content": content}
     )
@@ -86,7 +86,7 @@ async def test_upsert_vector(mock_quipu_client: QuipuClient[MockModel], content:
     ),
 )
 @pytest.mark.asyncio
-async def test_query_vector(mock_quipu_client: QuipuClient[MockModel], content: str):
+async def test_query_vector(mock_quipu_client: QuipuClient[Meme], content: str):
     response = await mock_quipu_client.query(
         namespace="test", data={"content": content}, top_k=5
     )

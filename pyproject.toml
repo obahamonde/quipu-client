@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "quipuclient"
+name = "quipu-sdk"
 version = "0.1.0"
 description = ""
 authors = ["obahamonde <oscarmartinbahamondemunoz@gmail.com>"]
