@@ -5,7 +5,6 @@ from typing import Generic, TypeVar, Type, Any
 from pydantic import Field
 from .schemas import Base, RagRequest, CosimResult, Status, QuipuModel
 from .proxy import Proxy
-from .utils import handle
 
 
 T = TypeVar("T", bound=Base)
@@ -29,7 +28,7 @@ class QuipuClient(Base, Proxy[httpx.AsyncClient], Generic[T]):
     def __load__(self):
         return httpx.AsyncClient(base_url=self.base_url, headers=self.headers)
 
-    @handle
+
     async def put(self, *, namespace: str, instance: T):
         response = await self.__load__().post(
             f"/api/document/{namespace}?action=put",
@@ -40,7 +39,7 @@ class QuipuClient(Base, Proxy[httpx.AsyncClient], Generic[T]):
         assert self._model
         return self._model(**data)
 
-    @handle
+
     async def get(self, *, namespace: str, key: str):
         response = await self.__load__().post(
             f"/api/document/{namespace}?action=get&key={key}",
@@ -54,7 +53,7 @@ class QuipuClient(Base, Proxy[httpx.AsyncClient], Generic[T]):
         except:
             return Status(**data)
 
-    @handle
+
     async def merge(self, *, namespace: str, instance: T):
         response = await self.__load__().post(
             f"/api/document/{namespace}?action=merge",
@@ -65,7 +64,6 @@ class QuipuClient(Base, Proxy[httpx.AsyncClient], Generic[T]):
         assert self._model
         return self._model(**_json)
 
-    @handle
     async def delete(self, *, namespace: str, key: str):
         response = await self.__load__().post(
             f"/api/document/{namespace}?action=delete&key={key}",
@@ -74,7 +72,6 @@ class QuipuClient(Base, Proxy[httpx.AsyncClient], Generic[T]):
         response.raise_for_status()
         return Status(**response.json())
 
-    @handle
     async def find(self, *, namespace: str, **kwargs: Any):
         response = await self.__load__().post(
             f"/api/document/{namespace}?action=find",
@@ -92,7 +89,6 @@ class QuipuClient(Base, Proxy[httpx.AsyncClient], Generic[T]):
         assert self._model
         return [self._model(**d) for d in response.json()]
 
-    @handle
     async def upsert(self, namespace: str, data: RagRequest):
         response = await self.__load__().post(
             f"/api/vector/{namespace}?action=upsert", json=data
@@ -100,7 +96,7 @@ class QuipuClient(Base, Proxy[httpx.AsyncClient], Generic[T]):
         response.raise_for_status()
         return Status(code=201, message="Upserted")
 
-    @handle
+
     async def query(self, namespace: str, data: RagRequest, top_k: int):
         response = await self.__load__().post(
             f"/api/vector/{namespace}?action=query&topK={top_k}", json=data
@@ -109,11 +105,20 @@ class QuipuClient(Base, Proxy[httpx.AsyncClient], Generic[T]):
         res = response.json()
         return [CosimResult(**d) for d in res]
 
-    @handle
+ 
     async def health_check(self):
         response = await self.__load__().get("/api/health")
         response.raise_for_status()
         return Status(code=200, message="Healthy")
+
+
+    async def subscribe(self, namespace: str, subscriber: str):
+        response = await self.__load__().get(
+            f"/api/pubsub/{namespace}?action=suscribe&subscriber={subscriber}"
+        )
+        response.raise_for_status()
+        async for event in response.aiter_text():
+            yield event
 
 
 QuipuClient.model_rebuild()
