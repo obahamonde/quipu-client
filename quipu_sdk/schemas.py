@@ -25,7 +25,7 @@ class JsonSchema(TypedDict, total=False):
     properties: dict[str, object]
 
 
-class QuipuModel(BaseModel, Generic[T]):
+class QuipuModel(Base, Generic[T]):
 
     data: Optional[T] = Field(default=None)
 
@@ -45,14 +45,14 @@ class QuipuModel(BaseModel, Generic[T]):
         return cls
 
 
-class Status(BaseModel):
+class Status(Base):
     code: int
     message: str
     key: Optional[str] = Field(default=None)
     definition: Optional[JsonSchema] = Field(default=None)
 
 
-class CosimResult(BaseModel):
+class CosimResult(Base):
     id: str
     score: float
     content: Union[str, list[str], list[float]]
