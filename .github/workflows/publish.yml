@@ -1,4 +1,4 @@
-name: Publish QuipuClient to PyPI
+name: Publish Python Package
 
 on:
   push:
@@ -23,7 +23,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install poetry
 
-      - name: Install deps
+      - name: Install dependencies
         run: poetry install
 
       - name: Run tests
@@ -34,4 +34,5 @@ jobs:
 
       - name: Publish to PyPI
         env:
-        run: poetry publish --build --username __token__ --password ${{ secrets.PYPI_TOKEN }}
+          POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_TOKEN }}
+        run: poetry publish --build --username __token__ --password $POETRY_PYPI_TOKEN_PYPI
