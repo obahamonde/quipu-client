@@ -3,41 +3,36 @@ name: Publish Python Package
 on:
   push:
     branches:
-      - main
+      - main  # or specify the branch you want to trigger the action
 
 jobs:
-  build:
+  publish:
     runs-on: ubuntu-latest
 
-    strategy:
-      matrix:
-        python-version: [3.6, 3.7, 3.8, 3.9]
-
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v2
         with:
-          python-version: '3.10' 
+          python-version: 3.10
 
       - name: Install Poetry
-        run: curl -sSL https://install.python-poetry.org | python3 -
-
-      - name: Install dependencies with Poetry
         run: |
-          poetry install
-        env:
-          POETRY_VIRTUALENVS_IN_PROJECT: true
+          python -m pip install --upgrade pip
+          pip install poetry
+
+      - name: Install dependencies
+        run: poetry install
 
       - name: Run tests
-        run: |
-          poetry run pytest
+        run: poetry run pytest
 
       - name: Build package
-        run: |
-          poetry build
+        run: poetry build
 
       - name: Publish to PyPI
         env:
           POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_TOKEN }}
-        run: |
-          poetry publish --build
+        run: poetry publish --username __token__ --password $POETRY_PYPI_TOKEN_PYPI
