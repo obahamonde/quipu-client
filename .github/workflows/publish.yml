@@ -3,8 +3,8 @@ name: Publish Python Package
 on:
   push:
     branches:
-      - main  
-      
+      - main  # or specify the branch you want to trigger the action
+
 jobs:
   publish:
     runs-on: ubuntu-latest
@@ -34,5 +34,5 @@ jobs:
 
        - name: Publish to PyPI
         env:
-          POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_TOKEN }}
+          POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPY_TOKEN }}
         run: poetry publish --build --username __token__ --password $POETRY_PYPI_TOKEN_PYPI
